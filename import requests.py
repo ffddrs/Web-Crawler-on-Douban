@@ -44,7 +44,7 @@ def crawl_top25():
 
 def parse_movie_detail(movie):
 
-    def find_pure_text_tag(find_key,save_name,tag):
+    def find_pure_text_tag(find_key,save_name,tag,join=False):
         for i in range(len(tag)):
             if(tag[i]==find_key):
                 start=i
@@ -57,6 +57,8 @@ def parse_movie_detail(movie):
                 elif(end-start>2):
                     movieinfo[save_name]=tag[i+1:j]
                 break
+        if join==True:
+            movieinfo[save_name]=''.join(movieinfo[save_name]).strip()
         
     movieinfo={}
     soup_movie=fromurl2soup(movie)
@@ -121,15 +123,13 @@ def parse_movie_detail(movie):
     initial_release_date_list=[initial_release_date_span.get_text(strip=True) for initial_release_date_span in initial_release_date_span_list]
     movieinfo['initial_release_date']=initial_release_date_list
 
-    movieinfo['runtime']=pointer.find('span',{'property':'v:runtime'})\
-                                .get_text(strip=True)
-    print(movieinfo['runtime'])
+    find_pure_text_tag('片长:','runtime',info_text_list,join=True)
 
     find_pure_text_tag('又名:','also_known_as',info_text_list)
 
     find_pure_text_tag('IMDb:','IMDb',info_text_list)
 
-
+    print(movieinfo)
     
 movies=crawl_top25()
 for movie in movies:
