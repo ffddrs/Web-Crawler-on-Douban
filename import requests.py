@@ -78,8 +78,15 @@ def parse_movie_detail(movie):
                                   .find_parent('span')\
                                   .find('span',{'class':'attrs'})\
                                   .find_all('span')
-    for lead_performer_span in lead_performer_spanlist:
-        lead_performerlist.append(lead_performer_span.find('a').get_text(strip=True))
+    if lead_performer_spanlist==[]:
+           lead_performer_a_list=pointer.find('span',string='主演')\
+                                     .find_parent('span')\
+                                     .find('span',{'class':'attrs'})\
+                                     .find_all('a')
+           lead_performerlist=[lead_performer_a.get_text(strip=True) for lead_performer_a in lead_performer_a_list]
+    else:
+        for lead_performer_span in lead_performer_spanlist:
+            lead_performerlist.append(lead_performer_span.find('a').get_text(strip=True))
     movieinfo['lead_performer']=lead_performerlist
 
     genrelist=pointer.find_all('span',{'property':'v:genre'})
