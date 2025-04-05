@@ -113,32 +113,10 @@ def parse_movie_detail(movie):
                    .find_parent('div',{'id':'info'})
     info_text_list=list(pointer.strings)
 
-    for i in range(len(info_text_list)):
-        if(info_text_list[i]=='制片国家/地区:'):
-            start=i
-            for j in range(i,len(info_text_list)):
-                if(info_text_list[j]=='\n'):
-                    end=j
-                    break
-            if(end-start==2):
-                movieinfo['produced_country_or_region']=info_text_list[i+1].strip()
-            elif(end-start>2):
-                movieinfo['produced_country_or_region']=info_text_list[i+1:j]
-            break
-
-    for i in range(len(info_text_list)):
-        if(info_text_list[i]=='语言:'):
-            start=i
-            for j in range(i,len(info_text_list)):
-                if(info_text_list[j]=='\n'):
-                    end=j
-                    break
-            if(end-start==2):
-                movieinfo['language']=info_text_list[i+1].strip()
-            elif(end-start>2):
-                movieinfo['language']=info_text_list[i+1:j]
-            break
+    find_pure_text_tag('制片国家/地区:','produced_country_or_region',info_text_list)
     
+    find_pure_text_tag('语言:','language',info_text_list)
+
     initial_release_date_span_list=pointer.find_all('span',{'property':'v:initialReleaseDate'})
     initial_release_date_list=[initial_release_date_span.get_text(strip=True) for initial_release_date_span in initial_release_date_span_list]
     movieinfo['initial_release_date']=initial_release_date_list
@@ -146,6 +124,11 @@ def parse_movie_detail(movie):
     movieinfo['runtime']=pointer.find('span',{'property':'v:runtime'})\
                                 .get_text(strip=True)
     print(movieinfo['runtime'])
+
+    find_pure_text_tag('又名:','also_known_as',info_text_list)
+
+    find_pure_text_tag('IMDb:','IMDb',info_text_list)
+
 
     
 movies=crawl_top25()
