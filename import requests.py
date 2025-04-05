@@ -135,7 +135,31 @@ def parse_movie_detail(movie):
 
     find_pure_text_tag('官方网站:','official_site',info_text_list,join=True)
 
-    print(movieinfo)
+    try:
+        movieinfo['summary']=soup_movie.find('span',{'class':'all hidden'}).get_text(strip=True)
+    except:
+        movieinfo['summary']=soup_movie.find('span',{'property':'v:summary'}).get_text(strip=True)
+
+    pointer=soup_movie.find('div',{'class':'rating_wrap clearbox'})
+
+    movieinfo['rating']=pointer.find('strong',{'class':'ll rating_num'}).get_text(strip=True)
+
+    movieinfo['nums_of_rating_people']=pointer.find('a',{'class':'rating_people'})\
+                                              .find('span',{'property':'v:votes'}).get_text(strip=True)
+    
+    ratings_on_weight={}
+    for i in range(1,6):
+        ratings_on_weight['{} star'.format(i)]=pointer.find('span',{'class':'stars{} starstop'.format(i)})\
+                                                      .find_next_sibling('span',{'class':'rating_per'}).get_text(strip=True)
+    movieinfo['ratings_on_weight']=ratings_on_weight
+
+    rating_text_list=list(pointer.find_parent('div',{'id':'interest_sectl'})\
+                            .find('div',{'class':'rating_betterthan'}).strings)
+    rating_text_list.remove('\n')
+    for i in range(len(rating_text_list)):
+        rating_text_list[i]=rating_text_list[i].strip()
+    movieinfo['rating_betterthan']=[rating_text_list[i]+rating_text_list[i+1] for i in range(0,len(rating_text_list),2)]
+
     
 movies=crawl_top25()
 for movie in movies:
