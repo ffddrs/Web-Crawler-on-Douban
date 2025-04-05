@@ -43,6 +43,21 @@ def crawl_top25():
         return []
 
 def parse_movie_detail(movie):
+
+    def find_pure_text_tag(find_key,save_name,tag):
+        for i in range(len(tag)):
+            if(tag[i]==find_key):
+                start=i
+                for j in range(i,len(tag)):
+                    if(tag[j]=='\n'):
+                        end=j
+                        break
+                if(end-start==2):
+                    movieinfo[save_name]=tag[i+1].strip()
+                elif(end-start>2):
+                    movieinfo[save_name]=tag[i+1:j]
+                break
+        
     movieinfo={}
     soup_movie=fromurl2soup(movie)
     pointer=soup_movie.find('div',{'class':'top250'})\
@@ -94,8 +109,44 @@ def parse_movie_detail(movie):
         genrelist[i]=genrelist[i].get_text(strip=True)
     movieinfo['genre']=genrelist
 
-    print(movieinfo)    
-                           
+    pointer=pointer.find('span',string='制片国家/地区:')\
+                   .find_parent('div',{'id':'info'})
+    info_text_list=list(pointer.strings)
+
+    for i in range(len(info_text_list)):
+        if(info_text_list[i]=='制片国家/地区:'):
+            start=i
+            for j in range(i,len(info_text_list)):
+                if(info_text_list[j]=='\n'):
+                    end=j
+                    break
+            if(end-start==2):
+                movieinfo['produced_country_or_region']=info_text_list[i+1].strip()
+            elif(end-start>2):
+                movieinfo['produced_country_or_region']=info_text_list[i+1:j]
+            break
+
+    for i in range(len(info_text_list)):
+        if(info_text_list[i]=='语言:'):
+            start=i
+            for j in range(i,len(info_text_list)):
+                if(info_text_list[j]=='\n'):
+                    end=j
+                    break
+            if(end-start==2):
+                movieinfo['language']=info_text_list[i+1].strip()
+            elif(end-start>2):
+                movieinfo['language']=info_text_list[i+1:j]
+            break
+    
+    initial_release_date_span_list=pointer.find_all('span',{'property':'v:initialReleaseDate'})
+    initial_release_date_list=[initial_release_date_span.get_text(strip=True) for initial_release_date_span in initial_release_date_span_list]
+    movieinfo['initial_release_date']=initial_release_date_list
+
+    movieinfo['runtime']=pointer.find('span',{'property':'v:runtime'})\
+                                .get_text(strip=True)
+    print(movieinfo['runtime'])
+
     
 movies=crawl_top25()
 for movie in movies:
