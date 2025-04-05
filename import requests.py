@@ -160,10 +160,68 @@ def parse_movie_detail(movie):
         rating_text_list[i]=rating_text_list[i].strip()
     movieinfo['rating_betterthan']=[rating_text_list[i]+rating_text_list[i+1] for i in range(0,len(rating_text_list),2)]
 
+    movieinfo['comments_site']=soup_movie.find('div',{'id':'comments-section'})\
+                      .find('h2')\
+                      .find('a')\
+                      .get('href')
+    
+    return movieinfo
+
+def parse_comments_site(comments_url):
+
+    comments_divs=[]
+
+    def parse_comments_site_page(comments_page_url):
+        nonlocal comments_divs
+        comment_page_soup=fromurl2soup(comments_page_url)
+        pointer=comment_page_soup.find('div',{'class':'mod-bd','id':'comments'})
+        comments_divs+=pointer.find_all('div',{'class':'comment-item'})
+        return comments_page_url[:-9]+\
+               pointer.find('div',{'id':'paginator'})\
+                      .find('a',string='后页 >')\
+                      .get('href')
+    
+    pageurl=comments_url
+    for i in range(3):
+        pageurl=parse_comments_site_page(pageurl)
+
+    return comments_divs
+
+def star(str):
+    star_pattern=re.compile(r'allstar(\d+)')
+    return int(re.match(star_pattern,str[0])[1])/10
+
+def parse_comments_div(comments_div):
+    comment={}
+    pointer=comments_div.find('div',{'class':'comment'})
+    comment['user']=pointer.find('span',{'class':'comment-info'})\
+                           .find('a')\
+                           .get_text(strip=True)
+    try:
+        comment['star']=star(pointer.find('span',{'class':'comment-info'})\
+                                    .find('span', class_=lambda x: x and 'allstar' in x)\
+                                    .get('class'))
+    except:
+        comment['star']=None
+    comment['time']=pointer.find('span',{'class':'comment-time'}).get_text(strip=True)
+    comment['useful']=pointer.find('span',{'class':'votes vote-count'}).get_text(strip=True)
+    comment['content']=pointer.find('p',{'class':'comment-content'})\
+                              .find('span',{'class':'short'}).get_text(strip=True)
+    print(comment)
+    return comment
+
+                           
+
+
     
 movies=crawl_top25()
 for movie in movies:
-    parse_movie_detail(movie)
+    comments_list=[]
+    movieinfo=parse_movie_detail(movie)
+    comments_dives=parse_comments_site(movieinfo['comments_site'])
+    for comments_div in comments_dives:
+        comments_list.append(parse_comments_div(comments_div))
+
 
 
 
