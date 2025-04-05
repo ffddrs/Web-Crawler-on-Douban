@@ -57,8 +57,12 @@ def parse_movie_detail(movie):
                 elif(end-start>2):
                     movieinfo[save_name]=tag[i+1:j]
                 break
-        if join==True:
-            movieinfo[save_name]=''.join(movieinfo[save_name]).strip()
+        try:
+            movieinfo[save_name]
+            if join==True:
+                movieinfo[save_name]=''.join(movieinfo[save_name]).strip()     
+        except:
+            movieinfo[save_name]=None
         
     movieinfo={}
     soup_movie=fromurl2soup(movie)
@@ -128,6 +132,8 @@ def parse_movie_detail(movie):
     find_pure_text_tag('又名:','also_known_as',info_text_list)
 
     find_pure_text_tag('IMDb:','IMDb',info_text_list)
+
+    find_pure_text_tag('官方网站:','official_site',info_text_list,join=True)
 
     print(movieinfo)
     
