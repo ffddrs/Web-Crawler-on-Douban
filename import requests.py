@@ -194,6 +194,7 @@ def star(str):
 def parse_comments_div(comments_div):
     comment={}
     pointer=comments_div.find('div',{'class':'comment'})
+    comment['movie_id']=count
     comment['user']=pointer.find('span',{'class':'comment-info'})\
                            .find('a')\
                            .get_text(strip=True)
@@ -207,20 +208,120 @@ def parse_comments_div(comments_div):
     comment['useful']=pointer.find('span',{'class':'votes vote-count'}).get_text(strip=True)
     comment['content']=pointer.find('p',{'class':'comment-content'})\
                               .find('span',{'class':'short'}).get_text(strip=True)
-    print(comment)
     return comment
 
-                           
-
-
+def create_database():
+    with pymysql.connect(host='localhost',user='root',password='password') as db:
+        with db.cursor() as cursor:
+            sql="CREATE DATABASE IF NOT EXISTS movies"
+            try:
+                cursor.execute(sql)
+                print('数据库创建成功')
+            except pymysql.MySQLError as e:
+                print(f"创建数据库时发生错误：{e}")
+  
+def create_movies_table():
+    with pymysql.connect(host='localhost',user='root',password='password',database='movies') as db:
+        with db.cursor() as cursor:
+            cursor.execute("DROP TABLE IF EXISTS comments_list")
+            cursor.execute("DROP TABLE IF EXISTS movies_list")
+            sql="""CREATE TABLE movies_list(
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                top25No VARCHAR(20) NOT NULL,
+                title VARCHAR(100) NOT NULL,
+                year VARCHAR(20) NOT NULL,
+                director VARCHAR(1000) NOT NULL,
+                scriptwriter VARCHAR(1000) NOT NULL,
+                lead_performer VARCHAR(1000) NOT NULL,
+                genre VARCHAR(100) NOT NULL,
+                produced_country_or_region VARCHAR(100) NOT NULL,
+                language VARCHAR(50) NOT NULL,
+                initial_release_date VARCHAR(200) NOT NULL,
+                runtime VARCHAR(50) NOT NULL,
+                also_known_as VARCHAR(200) NOT NULL,
+                IMDb VARCHAR(30) NOT NULL,
+                official_site VARCHAR(100),
+                summary VARCHAR(2000) NOT NULL,
+                rating VARCHAR(20) NOT NULL,
+                nums_of_rating_people VARCHAR(20) NOT NULL,
+                ratings_on_weight VARCHAR(100) NOT NULL,
+                rating_betterthan VARCHAR(100) NOT NULL,
+                comments_site VARCHAR(100) NOT NULL)
+                """
+            try:
+                cursor.execute(sql)
+                print('电影数据表创建成功')
+            except pymysql.MySQLError as e:
+                print(f"创建电影数据表时发生错误：{e}")
     
+def create_comments_table():
+    with pymysql.connect(host='localhost',user='root',password='password',database='movies') as db:
+        with db.cursor() as cursor:
+            cursor.execute("DROP TABLE IF EXISTS comments_list")
+            sql="""CREATE TABLE comments_list(
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                movie_id INT,
+                user VARCHAR(50) NOT NULL,
+                star VARCHAR(20),
+                time VARCHAR(50) NOT NULL,
+                useful VARCHAR(40) NOT NULL,
+                content VARCHAR(2000) NOT NULL,
+                CONSTRAINT fk_parent FOREIGN KEY (movie_id) REFERENCES movies_list(id))
+                """
+            try:
+                cursor.execute(sql)
+                print('评论数据表创建成功')
+            except pymysql.MySQLError as e:
+                print(f"创建评论数据表时发生错误：{e}")
+    
+def insert_movie_table(movieinfo):
+    values=list(movieinfo.values())
+    for i in range(len(values)):
+        values[i]=str(values[i])
+    values=tuple(values)
+    with pymysql.connect(host='localhost',user='root',password='password',database='movies') as db:
+        with db.cursor() as cursor:
+            sql="""INSERT INTO movies_list(top25No,title,year,director,scriptwriter,lead_performer,genre,produced_country_or_region,language,initial_release_date,runtime,also_known_as,IMDb,official_site,summary,rating,nums_of_rating_people,ratings_on_weight,rating_betterthan,comments_site)
+                values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """
+            try:
+                cursor.execute(sql,values)
+                db.commit()
+                print('电影数据插入成功')
+            except pymysql.MySQLError as e:
+                db.rollback()
+                print(f"电影数据插入时发生错误：{e}")
+
+
+def insert_comments_table(comments_list):
+    values=tuple(comments_list.values())
+    with pymysql.connect(host='localhost',user='root',password='password',database='movies') as db:
+        with db.cursor() as cursor:
+            sql="""INSERT INTO comments_list(movie_id,user,star,time,useful,content)
+                values(%s,%s,%s,%s,%s,%s)
+                """
+            try:
+                cursor.execute(sql,values)
+                db.commit()
+                print('评论数据插入成功')
+            except pymysql.MySQLError as e:
+                db.rollback()
+                print(f"评论数据插入时发生错误：{e}")
+
+count=1    
+create_database()
+create_movies_table()
+create_comments_table()
 movies=crawl_top25()
 for movie in movies:
-    comments_list=[]
     movieinfo=parse_movie_detail(movie)
+    insert_movie_table(movieinfo)
     comments_dives=parse_comments_site(movieinfo['comments_site'])
     for comments_div in comments_dives:
-        comments_list.append(parse_comments_div(comments_div))
+        comment=parse_comments_div(comments_div)
+        insert_comments_table(comment)
+    count+=1
+print("爬取完毕")
 
 
 
