@@ -11,7 +11,7 @@ def main():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     
     # 构建爬虫文件的路径
-    crawler_path = os.path.join(current_dir, "import requests.py")
+    crawler_path = os.path.join(current_dir, "douban_crawler.py")
     
     # 检查文件是否存在
     if not os.path.exists(crawler_path):
